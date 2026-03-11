@@ -80,20 +80,6 @@ Output JAR appears in `build/libs/`.
 
 ---
 
-## Comparison with the Spigot plugin
-
-| Feature                | Spigot Plugin | Fabric Mod     |
-|------------------------|---------------|----------------|
-| 6 difficulty levels    | ✅            | ✅             |
-| Configurable HP        | ✅            | ✅             |
-| Configurable damage    | ✅            | ✅             |
-| Configurable loot      | ✅            | ✅ (presets)   |
-| Custom difficulty      | ✅            | ✅             |
-| Reload command         | ✅            | ✅             |
-| Works on Fabric        | ❌            | ✅             |
-
----
-
 ## License
 
-MIT — based on the concept from JustErikSK's HarderWardens plugin.
+GPL-3.0 — see [LICENSE](LICENSE)
