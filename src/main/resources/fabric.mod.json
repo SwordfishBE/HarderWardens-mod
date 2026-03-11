@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "harder_wardens",
+  "version": "${version}",
+  "name": "Harder Wardens",
+  "description": "Makes Wardens more difficult with configurable HP, damage, and loot.",
+  "authors": [
+    "SwordfishBE"
+  ],
+  "contact": {
+    "sources": "https://github.com/SwordfishBE/HarderWardens-mod"
+  },
+  "license": "LGPL-3.0",
+  "icon": "assets/harder_wardens/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.harderwardens.HarderWardensMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.11"
+  }
+}
