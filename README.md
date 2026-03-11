@@ -1,6 +1,6 @@
-# Harder Wardens — Fabric Mod (1.21.11)
+# Harder Wardens — Fabric Mod
 
-Fabric port of the [HarderWardens Spigot plugin](https://github.com/JustErikSK/HarderWardens-plugin) by JustErikSK.
+Fabric mod based on the HarderWardens Spigot plugin by JustErikSK.
 
 Wardens gain more HP, deal more damage, and drop better loot. Fully configurable via a single JSON file.
 
