@@ -10,7 +10,7 @@
   "contact": {
     "sources": "https://github.com/SwordfishBE/HarderWardens-mod"
   },
-  "license": "LGPL-3.0",
+  "license": "AGPL-3.0",
   "icon": "assets/harder_wardens/icon.png",
   "environment": "*",
   "entrypoints": {
