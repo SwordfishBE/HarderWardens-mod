@@ -59,9 +59,9 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 
 ## 📦 Installation
 
-1. Install [Fabric Loader](https://fabricmc.net/use/installer/) for Minecraft 1.21.11
-2. Download [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.11
-3. Drop `harder-wardens-1.0.0.jar` into your `mods/` folder
+1. Install [Fabric Loader](https://fabricmc.net/use/installer/) for Minecraft
+2. Download [Fabric API](https://modrinth.com/mod/fabric-api)
+3. Drop `harder-wardens-<version>.jar` into your `mods/` folder
 4. Start the server/client — config is created at `config/harder_wardens.json`
 5. Edit the config and restart, or use `/harderwardens reload`
 
@@ -70,6 +70,9 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 ## 🔨 Building
 
 ```bash
+git clone https://github.com/SwordfishBE/HarderWardens-mod.git
+cd HarderWardens-mod
+chmod +x gradlew
 ./gradlew build
 ```
 
