@@ -78,8 +78,8 @@ chmod +x gradlew
 
 Output JAR appears in `build/libs/`.
 
-> This mod uses **Mojang Mappings** (via `loom.officialMojangMappings()`),
-> ready for forward compatibility with Minecraft 26.1 and beyond.
+> This mod targets the unobfuscated Minecraft `26.1` toolchain via Fabric Loom `1.15-SNAPSHOT`
+> and requires Java `25` for the Gradle JVM.
 
 ---
 
