@@ -6,7 +6,7 @@ Wardens gain more HP, deal more damage, and drop better loot. Fully configurable
 
 ---
 
-## ⚙️ Config (`config/harder_wardens.json`)
+## Config (`config/harder_wardens.json`)
 
 Generated automatically on first launch:
 
@@ -47,7 +47,7 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 
 ---
 
-## 🎮 Commands
+## Commands
 
 | Command                 | Permission | Description |
 |-------------------------|------------|-------------|
@@ -59,7 +59,7 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 
 ---
 
-## 📦 Installation
+## Installation
 
 1. Install [Fabric Loader](https://fabricmc.net/use/installer/) for Minecraft 26.1.
 2. Download [Fabric API](https://modrinth.com/mod/fabric-api).
@@ -69,7 +69,7 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 
 ---
 
-## 🔨 Building
+## Building
 
 ```bash
 git clone https://github.com/SwordfishBE/HarderWardens-mod.git
