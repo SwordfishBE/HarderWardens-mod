@@ -15,6 +15,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.storage.loot.LootPool;
@@ -80,6 +81,9 @@ public class HarderWardensMod implements ModInitializer {
         // Vanilla Warden has 500 HP. We add the delta as ADD_VALUE.
         AttributeInstance healthAttr = warden.getAttribute(Attributes.MAX_HEALTH);
         if (healthAttr != null) {
+            float oldMax = (float) healthAttr.getValue();
+            float oldHealth = warden.getHealth();
+
             healthAttr.removeModifier(HEALTH_MODIFIER_ID);
 
             double healthBonus = settings.health() - 500.0;
@@ -89,11 +93,11 @@ public class HarderWardensMod implements ModInitializer {
                     AttributeModifier.Operation.ADD_VALUE
             ));
 
-            // Cap current HP to new maximum if needed
+            // Keep the same health ratio after changing max HP.
+            // A fresh 500/500 Warden becomes 1024/1024 on INSANE instead of staying at 500/1024.
             float newMax = (float) healthAttr.getValue();
-            if (warden.getHealth() > newMax) {
-                warden.setHealth(newMax);
-            }
+            float adjustedHealth = oldMax > 0.0F ? (oldHealth / oldMax) * newMax : newMax;
+            warden.setHealth(Mth.clamp(adjustedHealth, 0.0F, newMax));
         }
 
         // ── Attack Damage ────────────────────────────────────────────────────
