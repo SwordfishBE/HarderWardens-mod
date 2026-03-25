@@ -50,7 +50,7 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 
 | Command                   | Permission | Description                         |
 |---------------------------|------------|-------------------------------------|
-| `/harderwardens reload`   | OP (lvl 2) | Reloads the config from disk        |
+| `/harderwardens reload`   | OP (lvl 2) | Reloads the config from disk and reapplies it to loaded Wardens |
 | `/harderwardens info`     | OP (lvl 2) | Shows current difficulty settings   |
 
 > **Note:** Loot table changes require a `/reload` or server restart after `/harderwardens reload`.

@@ -3,19 +3,19 @@ package net.harderwardens;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
-
-// Mojang-mapped Minecraft imports
-import net.minecraft.commands.Commands;
-import net.minecraft.server.permissions.Permissions;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.permissions.Permissions;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.storage.loot.LootPool;
@@ -24,9 +24,12 @@ import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static net.minecraft.commands.Commands.literal;
 
@@ -47,6 +50,8 @@ public class HarderWardensMod implements ModInitializer {
     private static final ResourceKey<LootTable> WARDEN_LOOT_KEY =
             ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace("entities/warden"));
 
+    private static final Set<UUID> PENDING_WARDENS = ConcurrentHashMap.newKeySet();
+
     public static HarderWardensConfig CONFIG;
 
     @Override
@@ -55,30 +60,53 @@ public class HarderWardensMod implements ModInitializer {
         LOGGER.info("[HarderWardens] Initialised! Difficulty: {}", CONFIG.difficulty);
 
         registerEntityEvents();
+        registerTickEvents();
         registerLootEvents();
         registerCommands();
     }
 
-    // ── Entity Events ─────────────────────────────────────────────────────────
-
     private void registerEntityEvents() {
-        // Fires whenever a Warden is loaded (fresh spawn or loaded from chunk)
         ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
             if (entity instanceof Warden warden) {
                 applyWardenSettings(warden);
+                PENDING_WARDENS.add(warden.getUUID());
             }
         });
     }
 
+    private void registerTickEvents() {
+        ServerTickEvents.END_SERVER_TICK.register(this::refreshPendingWardens);
+    }
+
+    /**
+     * Re-applies settings one tick later because the spawn pipeline can still overwrite
+     * current health after ENTITY_LOAD for freshly spawned Wardens.
+     */
+    private void refreshPendingWardens(MinecraftServer server) {
+        if (PENDING_WARDENS.isEmpty()) {
+            return;
+        }
+
+        Set<UUID> refreshed = ConcurrentHashMap.newKeySet();
+        for (ServerLevel level : server.getAllLevels()) {
+            for (var entity : level.getAllEntities()) {
+                if (entity instanceof Warden warden && PENDING_WARDENS.contains(warden.getUUID())) {
+                    applyWardenSettings(warden);
+                    refreshed.add(warden.getUUID());
+                }
+            }
+        }
+
+        PENDING_WARDENS.removeAll(refreshed);
+    }
+
     /**
      * Applies HP and attack damage modifiers based on the active config.
-     * Uses named ResourceLocation IDs so modifiers are never stacked twice.
+     * Uses named IDs so modifiers are never stacked twice.
      */
     private void applyWardenSettings(Warden warden) {
         DifficultySettings settings = CONFIG.getSettings();
 
-        // ── Max Health ──────────────────────────────────────────────────────
-        // Vanilla Warden has 500 HP. We add the delta as ADD_VALUE.
         AttributeInstance healthAttr = warden.getAttribute(Attributes.MAX_HEALTH);
         if (healthAttr != null) {
             float oldMax = (float) healthAttr.getValue();
@@ -93,17 +121,11 @@ public class HarderWardensMod implements ModInitializer {
                     AttributeModifier.Operation.ADD_VALUE
             ));
 
-            // Keep the same health ratio after changing max HP.
-            // A fresh 500/500 Warden becomes 1024/1024 on INSANE instead of staying at 500/1024.
             float newMax = (float) healthAttr.getValue();
             float adjustedHealth = oldMax > 0.0F ? (oldHealth / oldMax) * newMax : newMax;
             warden.setHealth(Mth.clamp(adjustedHealth, 0.0F, newMax));
         }
 
-        // ── Attack Damage ────────────────────────────────────────────────────
-        // Vanilla Warden base attack = 30.
-        // ADD_MULTIPLIED_BASE adds (multiplier - 1.0) * base.
-        // Example: 1.5x → bonus = 0.5 → total = 30 + 0.5 * 30 = 45
         AttributeInstance damageAttr = warden.getAttribute(Attributes.ATTACK_DAMAGE);
         if (damageAttr != null) {
             damageAttr.removeModifier(DAMAGE_MODIFIER_ID);
@@ -117,8 +139,6 @@ public class HarderWardensMod implements ModInitializer {
         }
     }
 
-    // ── Loot Events ───────────────────────────────────────────────────────────
-
     private void registerLootEvents() {
         LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {
             if (key.equals(WARDEN_LOOT_KEY)) {
@@ -127,25 +147,13 @@ public class HarderWardensMod implements ModInitializer {
         });
     }
 
-    /**
-     * Appends extra loot pools to the Warden loot table.
-     *
-     * EASY:      1–3 Echo Shards
-     * NORMAL:    2–5 Echo Shards, 1 Sculk Catalyst
-     * HARD:      3–7 Echo Shards, 1–2 Sculk Catalyst, 1–3 Diamond
-     * NIGHTMARE: 5–10 Echo Shards, 1–3 Sculk Catalyst, 1–3 Diamond, 1–2 Netherite Scrap
-     * INSANE:    7–15 Echo Shards, 2–5 Sculk Catalyst, 2–4 Diamond, 1–3 Netherite Scrap,
-     *            1–2 Netherite Ingot
-     */
     private void addWardenLoot(LootTable.Builder tableBuilder) {
         DifficultySettings.LootPreset preset = CONFIG.getSettings().lootPreset();
 
-        // No extra loot
         if (preset == DifficultySettings.LootPreset.NONE) return;
 
-        // Echo Shards — always present
         int[] echo = switch (preset) {
-            case NONE      -> new int[]{0, 0}; // unreachable, caught above
+            case NONE      -> new int[]{0, 0};
             case EASY      -> new int[]{1, 3};
             case NORMAL    -> new int[]{2, 5};
             case HARD      -> new int[]{3, 7};
@@ -154,7 +162,6 @@ public class HarderWardensMod implements ModInitializer {
         };
         tableBuilder.withPool(itemPool(Items.ECHO_SHARD, echo[0], echo[1]));
 
-        // Sculk Catalyst — NORMAL and above
         if (preset != DifficultySettings.LootPreset.EASY) {
             int sculkMax = switch (preset) {
                 case NORMAL    -> 1;
@@ -166,7 +173,6 @@ public class HarderWardensMod implements ModInitializer {
             tableBuilder.withPool(itemPool(Items.SCULK_CATALYST, 1, sculkMax));
         }
 
-        // Diamond — HARD and above
         if (preset == DifficultySettings.LootPreset.HARD
                 || preset == DifficultySettings.LootPreset.NIGHTMARE
                 || preset == DifficultySettings.LootPreset.INSANE) {
@@ -177,20 +183,17 @@ public class HarderWardensMod implements ModInitializer {
             tableBuilder.withPool(itemPool(Items.DIAMOND, 1, diamondMax));
         }
 
-        // Netherite Scrap — NIGHTMARE and above
         if (preset == DifficultySettings.LootPreset.NIGHTMARE
                 || preset == DifficultySettings.LootPreset.INSANE) {
             int scrapMax = (preset == DifficultySettings.LootPreset.INSANE) ? 3 : 2;
             tableBuilder.withPool(itemPool(Items.NETHERITE_SCRAP, 1, scrapMax));
         }
 
-        // Netherite Ingot — INSANE only
         if (preset == DifficultySettings.LootPreset.INSANE) {
             tableBuilder.withPool(itemPool(Items.NETHERITE_INGOT, 1, 2));
         }
     }
 
-    /** Builds a simple single-roll LootPool for one item with a count range. */
     private LootPool.Builder itemPool(net.minecraft.world.item.Item item, int min, int max) {
         return LootPool.lootPool()
                 .setRolls(ConstantValue.exactly(1))
@@ -201,20 +204,34 @@ public class HarderWardensMod implements ModInitializer {
                 );
     }
 
-    // ── Commands ──────────────────────────────────────────────────────────────
+    private int reapplyLoadedWardens(MinecraftServer server) {
+        int updatedWardens = 0;
+        for (ServerLevel level : server.getAllLevels()) {
+            for (var entity : level.getAllEntities()) {
+                if (entity instanceof Warden warden) {
+                    applyWardenSettings(warden);
+                    updatedWardens++;
+                }
+            }
+        }
+        return updatedWardens;
+    }
 
     private void registerCommands() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
             dispatcher.register(
                 literal("harderwardens")
                     .requires(src -> src.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
-
-                    // /harderwardens reload
                     .then(literal("reload")
                         .executes(ctx -> {
                             CONFIG = HarderWardensConfig.load();
+                            int updatedWardens = reapplyLoadedWardens(ctx.getSource().getServer());
                             ctx.getSource().sendSuccess(
                                 () -> Component.literal("§a[HarderWardens] §fConfig reloaded! Difficulty: §e" + CONFIG.difficulty),
+                                false
+                            );
+                            ctx.getSource().sendSuccess(
+                                () -> Component.literal("§7Updated loaded Wardens: §f" + updatedWardens),
                                 false
                             );
                             ctx.getSource().sendSuccess(
@@ -224,8 +241,6 @@ public class HarderWardensMod implements ModInitializer {
                             return 1;
                         })
                     )
-
-                    // /harderwardens info
                     .then(literal("info")
                         .executes(ctx -> {
                             DifficultySettings s = CONFIG.getSettings();
