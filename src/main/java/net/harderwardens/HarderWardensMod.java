@@ -69,7 +69,9 @@ public class HarderWardensMod implements ModInitializer {
         ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
             if (entity instanceof Warden warden) {
                 applyWardenSettings(warden);
-                PENDING_WARDENS.add(warden.getUUID());
+                if (warden.tickCount <= 1) {
+                    PENDING_WARDENS.add(warden.getUUID());
+                }
             }
         });
     }
@@ -79,20 +81,24 @@ public class HarderWardensMod implements ModInitializer {
     }
 
     /**
-     * Re-applies settings one tick later because the spawn pipeline can still overwrite
-     * current health after ENTITY_LOAD for freshly spawned Wardens.
+     * Finishes stat application one tick later because fresh Warden spawns can still overwrite
+     * current health after ENTITY_LOAD. At this point max health is already updated, so setHealth
+     * clamps against the correct value instead of an older cached max.
      */
     private void refreshPendingWardens(MinecraftServer server) {
         if (PENDING_WARDENS.isEmpty()) {
             return;
         }
 
+        float desiredHealth = (float) CONFIG.getSettings().health();
         Set<UUID> refreshed = ConcurrentHashMap.newKeySet();
         for (ServerLevel level : server.getAllLevels()) {
             for (var entity : level.getAllEntities()) {
                 if (entity instanceof Warden warden && PENDING_WARDENS.contains(warden.getUUID())) {
-                    applyWardenSettings(warden);
-                    refreshed.add(warden.getUUID());
+                    warden.setHealth(desiredHealth);
+                    if (Math.abs(warden.getHealth() - desiredHealth) < 0.5F) {
+                        refreshed.add(warden.getUUID());
+                    }
                 }
             }
         }
@@ -204,18 +210,6 @@ public class HarderWardensMod implements ModInitializer {
                 );
     }
 
-    private int reapplyLoadedWardens(MinecraftServer server) {
-        int updatedWardens = 0;
-        for (ServerLevel level : server.getAllLevels()) {
-            for (var entity : level.getAllEntities()) {
-                if (entity instanceof Warden warden) {
-                    applyWardenSettings(warden);
-                    updatedWardens++;
-                }
-            }
-        }
-        return updatedWardens;
-    }
 
     private void registerCommands() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
@@ -225,13 +219,12 @@ public class HarderWardensMod implements ModInitializer {
                     .then(literal("reload")
                         .executes(ctx -> {
                             CONFIG = HarderWardensConfig.load();
-                            int updatedWardens = reapplyLoadedWardens(ctx.getSource().getServer());
                             ctx.getSource().sendSuccess(
                                 () -> Component.literal("§a[HarderWardens] §fConfig reloaded! Difficulty: §e" + CONFIG.difficulty),
                                 false
                             );
                             ctx.getSource().sendSuccess(
-                                () -> Component.literal("§7Updated loaded Wardens: §f" + updatedWardens),
+                                () -> Component.literal("§7Existing Wardens keep their current stats. New spawns use the updated config."),
                                 false
                             );
                             ctx.getSource().sendSuccess(
