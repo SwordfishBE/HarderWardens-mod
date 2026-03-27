@@ -67,6 +67,8 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 4. Start the server/client. The config is created at `config/harder_wardens.json`.
 5. Edit the config and restart, or use `/harderwardens reload`.
 
+This mod is also available on [Modrinth](https://modrinth.com/mod/harder-wardens-mod) or [CurseForge](https://www.curseforge.com/minecraft/mc-mods/harder-wardens).
+
 ---
 
 ## Building
