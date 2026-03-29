@@ -1,8 +1,13 @@
-# Harder Wardens — Fabric Mod
+# Harder Wardens
 
 Fabric mod based on the HarderWardens Spigot plugin by JustErikSK.
 
 Wardens gain more HP, deal more damage, and drop better loot. Fully configurable via a single JSON file.
+
+[![GitHub Release](https://img.shields.io/github/v/release/SwordfishBE/HarderWardens-mod?display_name=release&logo=github)](https://github.com/SwordfishBE/HarderWardens-mod/releases)
+[![GitHub Downloads](https://img.shields.io/github/downloads/SwordfishBE/HarderWardens-mod/total?logo=github)](https://github.com/SwordfishBE/HarderWardens-mod/releases)
+[![Modrinth Downloads](https://img.shields.io/modrinth/dt/YYlTINeM?logo=modrinth&logoColor=white&label=Modrinth%20downloads)](https://modrinth.com/mod/harder-wardens-mod)
+[![CurseForge Downloads](https://img.shields.io/curseforge/dt/1487893?logo=curseforge&logoColor=white&label=CurseForge%20downloads)](https://www.curseforge.com/minecraft/mc-mods/harder-wardens)
 
 ---
 
@@ -61,13 +66,16 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 
 ## Installation
 
-1. Install [Fabric Loader](https://fabricmc.net/use/installer/) for Minecraft 26.1.
-2. Download [Fabric API](https://modrinth.com/mod/fabric-api).
-3. Drop `harder-wardens-<version>.jar` into your `mods/` folder.
-4. Start the server/client. The config is created at `config/harder_wardens.json`.
-5. Edit the config and restart, or use `/harderwardens reload`.
+| Platform   | Link |
+|------------|------|
+| GitHub     | [Releases](https://github.com/SwordfishBE/HarderWardens-mod/releases) |
+| Modrinth   | [Harder Wardens](https://modrinth.com/mod/harder-wardens-mod) |
+| CurseForge | [Harder Wardens](https://www.curseforge.com/minecraft/mc-mods/harder-wardens) |
 
-This mod is also available on [Modrinth](https://modrinth.com/mod/harder-wardens-mod) or [CurseForge](https://www.curseforge.com/minecraft/mc-mods/harder-wardens).
+1. Download the latest JAR from your preferred platform above.
+2. Place the JAR in your server's `mods/` folder.
+3. Make sure [Fabric API](https://modrinth.com/mod/fabric-api) is also installed.
+4. Start Minecraft — the config file will be created automatically.
 
 ---
 
@@ -80,8 +88,6 @@ cd HarderWardens-mod
 ```
 
 Output JAR appears in `build/libs/`.
-
-This mod targets Minecraft `26.1` with Fabric Loader `0.18.4`, Fabric API `0.144.0+26.1`, Fabric Loom `1.15-SNAPSHOT`, and Java `25` for the Gradle JVM.
 
 ---
 
