@@ -11,7 +11,7 @@ Wardens gain more HP, deal more damage, and drop better loot. Fully configurable
 
 ---
 
-## Config (`config/harder_wardens.json`)
+## ⚙️ Config (`config/harder_wardens.json`)
 
 Generated automatically on first launch:
 
@@ -52,7 +52,7 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 
 ---
 
-## Commands
+## 🔄 Commands
 
 | Command                 | Permission | Description |
 |-------------------------|------------|-------------|
@@ -64,7 +64,7 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 
 ---
 
-## Installation
+## 📦 Installation
 
 | Platform   | Link |
 |------------|------|
@@ -79,7 +79,7 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 
 ---
 
-## Building
+## 🧱 Building
 
 ```bash
 git clone https://github.com/SwordfishBE/HarderWardens-mod.git
@@ -91,6 +91,6 @@ Output JAR appears in `build/libs/`.
 
 ---
 
-## License
+## 📄 License
 
-AGPL-3.0 — see [LICENSE](LICENSE)
+Released under the [AGPL-3.0 License](LICENSE)
