@@ -2,12 +2,14 @@ package net.harderwardens;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.stream.JsonReader;
 import com.google.gson.annotations.SerializedName;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.Locale;
 
 /**
  * Mod configuration, stored at config/harder_wardens.json.
@@ -72,7 +74,9 @@ public class HarderWardensConfig {
         if (Files.exists(configFile)) {
             try (Reader reader = new InputStreamReader(
                     new FileInputStream(configFile.toFile()), StandardCharsets.UTF_8)) {
-                HarderWardensConfig config = GSON.fromJson(reader, HarderWardensConfig.class);
+                JsonReader jsonReader = new JsonReader(reader);
+                jsonReader.setLenient(true);
+                HarderWardensConfig config = GSON.fromJson(jsonReader, HarderWardensConfig.class);
                 if (config != null) {
                     HarderWardensMod.LOGGER.info("[HarderWardens] Config loaded: difficulty={}", config.difficulty);
                     return config;
@@ -93,13 +97,41 @@ public class HarderWardensConfig {
         Path configFile = getConfigPath();
         try {
             Files.createDirectories(configFile.getParent());
-            try (Writer writer = new OutputStreamWriter(
-                    new FileOutputStream(configFile.toFile()), StandardCharsets.UTF_8)) {
-                GSON.toJson(this, writer);
-            }
+            Files.writeString(configFile, toCommentedJson(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             HarderWardensMod.LOGGER.error("[HarderWardens] Failed to save config.", e);
         }
+    }
+
+    private String toCommentedJson() {
+        return """
+                {
+                  // Preset difficulty for newly spawned Wardens.
+                  // Valid values: EASY, NORMAL, HARD, NIGHTMARE, INSANE, or CUSTOM.
+                  "difficulty": "%s",
+
+                  // Maximum Warden health.
+                  // Only used when difficulty is CUSTOM.
+                  "customHealth": %s,
+
+                  // Multiplies the Warden's base attack damage.
+                  // Only used when difficulty is CUSTOM.
+                  "customDamageMultiplier": %s,
+
+                  // Loot preset used when difficulty is CUSTOM.
+                  // Valid values: NONE, EASY, NORMAL, HARD, NIGHTMARE, or INSANE.
+                  "customLootPreset": "%s"
+                }
+                """.formatted(
+                difficulty,
+                formatNumber(customHealth),
+                formatNumber(customDamageMultiplier),
+                customLootPreset
+        );
+    }
+
+    private static String formatNumber(double value) {
+        return String.format(Locale.ROOT, "%.1f", value);
     }
 
     private static Path getConfigPath() {

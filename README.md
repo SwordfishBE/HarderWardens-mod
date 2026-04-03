@@ -17,9 +17,20 @@ Generated automatically on first launch:
 
 ```json
 {
+  // Preset difficulty for newly spawned Wardens.
+  // Valid values: EASY, NORMAL, HARD, NIGHTMARE, INSANE, or CUSTOM.
   "difficulty": "NORMAL",
+
+  // Maximum Warden health.
+  // Only used when difficulty is CUSTOM.
   "customHealth": 500.0,
+
+  // Multiplies the Warden's base attack damage.
+  // Only used when difficulty is CUSTOM.
   "customDamageMultiplier": 1.5,
+
+  // Loot preset used when difficulty is CUSTOM.
+  // Valid values: NONE, EASY, NORMAL, HARD, NIGHTMARE, or INSANE.
   "customLootPreset": "NORMAL"
 }
 ```
