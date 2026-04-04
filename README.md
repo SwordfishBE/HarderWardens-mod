@@ -2,7 +2,7 @@
 
 Fabric mod based on the HarderWardens Spigot plugin by JustErikSK.
 
-Wardens gain more HP, deal more damage, and drop better loot. Fully configurable via a single JSON file.
+Wardens gain more HP, deal more damage, and drop better loot. Fully configurable!
 
 [![GitHub Release](https://img.shields.io/github/v/release/SwordfishBE/HarderWardens-mod?display_name=release&logo=github)](https://github.com/SwordfishBE/HarderWardens-mod/releases)
 [![GitHub Downloads](https://img.shields.io/github/downloads/SwordfishBE/HarderWardens-mod/total?logo=github)](https://github.com/SwordfishBE/HarderWardens-mod/releases)
@@ -13,7 +13,7 @@ Wardens gain more HP, deal more damage, and drop better loot. Fully configurable
 
 ## ⚙️ Config (`config/harder_wardens.json`)
 
-Generated automatically on first launch:
+Generated automatically on first launch. You can edit it directly or use Mod Menu when both Mod Menu and Cloth Config are installed on the client:
 
 ```json
 {
@@ -47,7 +47,7 @@ Generated automatically on first launch:
 | `CUSTOM`    | ->   | ->     | Uses the custom fields below |
 
 > Vanilla Warden baseline: 500 HP, 30 base attack damage.
-> Minecraft 26.1 clamps `minecraft:max_health` to `1024`, so presets stay below that vanilla limit.
+> Minecraft clamps `minecraft:max_health` to `1024`, so presets stay below that vanilla limit.
 
 ### `customHealth` *(CUSTOM only)*
 Maximum HP for the Warden. Default: `500.0`
@@ -86,7 +86,14 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 1. Download the latest JAR from your preferred platform above.
 2. Place the JAR in your server's `mods/` folder.
 3. Make sure [Fabric API](https://modrinth.com/mod/fabric-api) is also installed.
-4. Start Minecraft — the config file will be created automatically.
+4. Optional for an in-game config screen on the client: install [Mod Menu](https://modrinth.com/mod/modmenu) and [Cloth Config API](https://modrinth.com/mod/cloth-config).
+5. Start Minecraft — the config file will be created automatically.
+
+### Optional Mod Menu support
+
+- With Mod Menu + Cloth Config installed on the client, Harder Wardens exposes a full config screen.
+- On dedicated servers, neither Mod Menu nor Cloth Config is required.
+- If Mod Menu is present but Cloth Config is missing, the mod still works normally and simply does not open a config GUI.
 
 ---
 
@@ -95,6 +102,7 @@ Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, o
 ```bash
 git clone https://github.com/SwordfishBE/HarderWardens-mod.git
 cd HarderWardens-mod
+chmod +x gradlew
 ./gradlew build
 ```
 

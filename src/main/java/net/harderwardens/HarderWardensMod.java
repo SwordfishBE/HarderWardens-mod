@@ -68,6 +68,16 @@ public class HarderWardensMod implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> ModrinthUpdateChecker.checkOnceAsync());
     }
 
+    static HarderWardensConfig loadConfigForEditing() {
+        return HarderWardensConfig.load();
+    }
+
+    static void applyEditedConfig(HarderWardensConfig editedConfig) {
+        editedConfig.save();
+        CONFIG = HarderWardensConfig.load();
+        LOGGER.info("[HarderWardens] Config updated through client config screen.");
+    }
+
     private void registerEntityEvents() {
         ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
             if (entity instanceof Warden warden) {

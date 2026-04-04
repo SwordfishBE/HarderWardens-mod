@@ -19,11 +19,18 @@
   "entrypoints": {
     "main": [
       "net.harderwardens.HarderWardensMod"
+    ],
+    "modmenu": [
+      "net.harderwardens.HarderWardensModMenuIntegration"
     ]
   },
   "depends": {
     "fabricloader": ">=0.18.6",
     "fabric-api": "*",
     "minecraft": "~26.1.1"
+  },
+  "suggests": {
+    "modmenu": "*",
+    "cloth-config": "*"
   }
 }

@@ -49,6 +49,10 @@ public class HarderWardensConfig {
         }
     }
 
+    public DifficultySettings.LootPreset getCustomLootPreset() {
+        return DifficultySettings.fromName(customLootPreset).lootPreset();
+    }
+
     /** Returns the active DifficultySettings based on the current config. */
     public DifficultySettings getSettings() {
         return switch (getDifficulty()) {
