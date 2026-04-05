@@ -6,6 +6,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.harderwardens.util.ModrinthUpdateChecker;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -39,6 +41,13 @@ public class HarderWardensMod implements ModInitializer {
 
     public static final String MOD_ID = "harder_wardens";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    private static final ModMetadata MOD_METADATA = FabricLoader.getInstance()
+            .getModContainer(MOD_ID)
+            .orElseThrow(() -> new IllegalStateException("Missing mod metadata for " + MOD_ID))
+            .getMetadata();
+    public static final String MOD_NAME = MOD_METADATA.getName();
+    public static final String MOD_VERSION = MOD_METADATA.getVersion().getFriendlyString();
+    public static final String LOG_PREFIX = "[" + MOD_NAME + "]";
 
     /** ID for the health modifier — prevents double-stacking on chunk reload. */
     public static final Identifier HEALTH_MODIFIER_ID =
@@ -59,7 +68,7 @@ public class HarderWardensMod implements ModInitializer {
     @Override
     public void onInitialize() {
         CONFIG = HarderWardensConfig.load();
-        LOGGER.info("[HarderWardens] Initialised! Difficulty: {}", CONFIG.difficulty);
+        LOGGER.info("{} Mod initialized. Version: {}", LOG_PREFIX, MOD_VERSION);
 
         registerEntityEvents();
         registerTickEvents();
@@ -75,7 +84,7 @@ public class HarderWardensMod implements ModInitializer {
     static void applyEditedConfig(HarderWardensConfig editedConfig) {
         editedConfig.save();
         CONFIG = HarderWardensConfig.load();
-        LOGGER.info("[HarderWardens] Config updated through client config screen.");
+        LOGGER.debug("{} Config updated through client config screen.", LOG_PREFIX);
     }
 
     private void registerEntityEvents() {
@@ -232,6 +241,7 @@ public class HarderWardensMod implements ModInitializer {
                     .then(literal("reload")
                         .executes(ctx -> {
                             CONFIG = HarderWardensConfig.load();
+                            LOGGER.info("{} Config reloaded via command.", LOG_PREFIX);
                             ctx.getSource().sendSuccess(
                                 () -> Component.literal("§a[HarderWardens] §fConfig reloaded! Difficulty: §e" + CONFIG.difficulty),
                                 false

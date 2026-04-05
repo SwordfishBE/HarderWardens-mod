@@ -44,7 +44,8 @@ public class HarderWardensConfig {
         try {
             return Difficulty.valueOf(difficulty.toUpperCase());
         } catch (IllegalArgumentException e) {
-            HarderWardensMod.LOGGER.warn("[HarderWardens] Unknown difficulty '{}', falling back to NORMAL.", difficulty);
+            HarderWardensMod.LOGGER.warn("{} Unknown difficulty '{}', falling back to NORMAL.",
+                    HarderWardensMod.LOG_PREFIX, difficulty);
             return Difficulty.NORMAL;
         }
     }
@@ -82,17 +83,20 @@ public class HarderWardensConfig {
                 jsonReader.setLenient(true);
                 HarderWardensConfig config = GSON.fromJson(jsonReader, HarderWardensConfig.class);
                 if (config != null) {
-                    HarderWardensMod.LOGGER.info("[HarderWardens] Config loaded: difficulty={}", config.difficulty);
+                    HarderWardensMod.LOGGER.debug("{} Config loaded: difficulty={}",
+                            HarderWardensMod.LOG_PREFIX, config.difficulty);
                     return config;
                 }
             } catch (IOException e) {
-                HarderWardensMod.LOGGER.error("[HarderWardens] Failed to load config, using defaults.", e);
+                HarderWardensMod.LOGGER.error("{} Failed to load config, using defaults.",
+                        HarderWardensMod.LOG_PREFIX, e);
             }
         }
 
         HarderWardensConfig defaults = new HarderWardensConfig();
         defaults.save();
-        HarderWardensMod.LOGGER.info("[HarderWardens] Default config created at {}", configFile);
+        HarderWardensMod.LOGGER.debug("{} Default config created at {}",
+                HarderWardensMod.LOG_PREFIX, configFile);
         return defaults;
     }
 
@@ -103,7 +107,7 @@ public class HarderWardensConfig {
             Files.createDirectories(configFile.getParent());
             Files.writeString(configFile, toCommentedJson(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            HarderWardensMod.LOGGER.error("[HarderWardens] Failed to save config.", e);
+            HarderWardensMod.LOGGER.error("{} Failed to save config.", HarderWardensMod.LOG_PREFIX, e);
         }
     }
 
