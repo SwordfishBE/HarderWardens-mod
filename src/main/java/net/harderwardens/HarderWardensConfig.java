@@ -19,6 +19,7 @@ import java.util.Locale;
  *  customHealth         - Max HP for the Warden (CUSTOM only)
  *  customDamageMultiplier - Attack damage multiplier, e.g. 2.0 = double damage (CUSTOM only)
  *  customLootPreset     - Which loot preset to use for CUSTOM: EASY/NORMAL/HARD/NIGHTMARE/INSANE
+ *  customXpReward       - XP reward for the Warden (CUSTOM only, max 100)
  */
 public class HarderWardensConfig {
 
@@ -38,6 +39,9 @@ public class HarderWardensConfig {
     @SerializedName("customLootPreset")
     public String customLootPreset = "NORMAL";
 
+    @SerializedName("customXpReward")
+    public int customXpReward = 25;
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     public Difficulty getDifficulty() {
@@ -54,6 +58,10 @@ public class HarderWardensConfig {
         return DifficultySettings.fromName(customLootPreset).lootPreset();
     }
 
+    public int getClampedCustomXpReward() {
+        return Math.clamp(customXpReward, 0, 100);
+    }
+
     /** Returns the active DifficultySettings based on the current config. */
     public DifficultySettings getSettings() {
         return switch (getDifficulty()) {
@@ -65,7 +73,8 @@ public class HarderWardensConfig {
             case CUSTOM    -> new DifficultySettings(
                     customHealth,
                     customDamageMultiplier,
-                    DifficultySettings.fromName(customLootPreset).lootPreset()
+                    DifficultySettings.fromName(customLootPreset).lootPreset(),
+                    getClampedCustomXpReward()
             );
         };
     }
@@ -128,13 +137,19 @@ public class HarderWardensConfig {
 
                   // Loot preset used when difficulty is CUSTOM.
                   // Valid values: NONE, EASY, NORMAL, HARD, NIGHTMARE, or INSANE.
-                  "customLootPreset": "%s"
+                  "customLootPreset": "%s",
+
+                  // XP reward dropped by the Warden.
+                  // Only used when difficulty is CUSTOM.
+                  // Values above 100 are clamped to 100.
+                  "customXpReward": %s
                 }
                 """.formatted(
                 difficulty,
                 formatNumber(customHealth),
                 formatNumber(customDamageMultiplier),
-                customLootPreset
+                customLootPreset,
+                getClampedCustomXpReward()
         );
     }
 

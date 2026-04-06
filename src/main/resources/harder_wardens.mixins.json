@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "net.harderwardens.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "MonsterMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

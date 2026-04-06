@@ -59,6 +59,14 @@ final class HarderWardensClothConfigScreen {
                 .setSaveConsumer(value -> config.customLootPreset = value.name())
                 .build());
 
+        general.addEntry(entries.startIntField(Component.literal("Custom XP Reward"), config.getClampedCustomXpReward())
+                .setDefaultValue(25)
+                .setMin(0)
+                .setMax(100)
+                .setTooltip(Component.literal("XP reward dropped when difficulty is CUSTOM."))
+                .setSaveConsumer(value -> config.customXpReward = value)
+                .build());
+
         return builder.build();
     }
 }

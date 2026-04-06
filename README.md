@@ -2,7 +2,7 @@
 
 Fabric mod based on the HarderWardens Spigot plugin by JustErikSK.
 
-Wardens gain more HP, deal more damage, and drop better loot. Fully configurable!
+Wardens gain more HP, deal more damage, and drop better loot and XP. Fully configurable!
 
 [![GitHub Release](https://img.shields.io/github/v/release/SwordfishBE/HarderWardens-mod?display_name=release&logo=github)](https://github.com/SwordfishBE/HarderWardens-mod/releases)
 [![GitHub Downloads](https://img.shields.io/github/downloads/SwordfishBE/HarderWardens-mod/total?logo=github)](https://github.com/SwordfishBE/HarderWardens-mod/releases)
@@ -31,20 +31,25 @@ Generated automatically on first launch. You can edit it directly or use Mod Men
 
   // Loot preset used when difficulty is CUSTOM.
   // Valid values: NONE, EASY, NORMAL, HARD, NIGHTMARE, or INSANE.
-  "customLootPreset": "NORMAL"
+  "customLootPreset": "NORMAL",
+
+  // XP reward dropped by the Warden.
+  // Only used when difficulty is CUSTOM.
+  // Values above 100 are clamped to 100.
+  "customXpReward": 25
 }
 ```
 
 ### `difficulty`
 
-| Value       | HP   | Damage | Loot drops |
-|-------------|------|--------|------------|
-| `EASY`      | 500  | 1.0x   | 1-3 Echo Shards |
-| `NORMAL`    | 500  | 1.5x   | 2-5 Echo Shards, 1 Sculk Catalyst |
-| `HARD`      | 750  | 2.0x   | 3-7 Echo Shards, 1-2 Sculk Catalyst, 1-3 Diamond |
-| `NIGHTMARE` | 850  | 2.5x   | 5-10 Echo Shards, 1-3 Sculk Catalyst, 1-3 Diamond, 1-2 Netherite Scrap |
-| `INSANE`    | 1000 | 3.0x   | 7-15 Echo Shards, 2-5 Sculk Catalyst, 2-4 Diamond, 1-3 Netherite Scrap, 1-2 Netherite Ingot |
-| `CUSTOM`    | ->   | ->     | Uses the custom fields below |
+| Value       | HP   | Damage | XP | Loot drops |
+|-------------|------|--------|----|------------|
+| `EASY`      | 500  | 1.0x   | 15 | 1-3 Echo Shards |
+| `NORMAL`    | 500  | 1.5x   | 25 | 2-5 Echo Shards, 1 Sculk Catalyst |
+| `HARD`      | 750  | 2.0x   | 45 | 3-7 Echo Shards, 1-2 Sculk Catalyst, 1-3 Diamond |
+| `NIGHTMARE` | 850  | 2.5x   | 55 | 5-10 Echo Shards, 1-3 Sculk Catalyst, 1-3 Diamond, 1-2 Netherite Scrap |
+| `INSANE`    | 1000 | 3.0x   | 70 | 7-15 Echo Shards, 2-5 Sculk Catalyst, 2-4 Diamond, 1-3 Netherite Scrap, 1-2 Netherite Ingot |
+| `CUSTOM`    | ->   | ->     | -> | Uses the custom fields below |
 
 > Vanilla Warden baseline: 500 HP, 30 base attack damage.
 > Minecraft clamps `minecraft:max_health` to `1024`, so presets stay below that vanilla limit.
@@ -60,6 +65,14 @@ Example: `2.0` = double damage.
 Which loot table preset to use: `NONE`, `EASY`, `NORMAL`, `HARD`, `NIGHTMARE`, or `INSANE`
 
 `NONE` disables all extra loot drops.
+
+### `customXpReward` *(CUSTOM only)*
+How much XP the Warden drops. Default: `25`
+
+Minimum: `0`
+Maximum: `100`
+
+Values above `100` are automatically clamped back to `100`.
 
 ---
 

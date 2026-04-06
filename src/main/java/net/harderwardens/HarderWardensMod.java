@@ -165,6 +165,8 @@ public class HarderWardensMod implements ModInitializer {
                     AttributeModifier.Operation.ADD_MULTIPLIED_BASE
             ));
         }
+
+        ((MonsterAccessor) warden).harderWardens$setXpReward(settings.xpReward());
     }
 
     private void registerLootEvents() {
@@ -266,7 +268,8 @@ public class HarderWardensMod implements ModInitializer {
                                     "  §7Difficulty: §f" + CONFIG.difficulty + "\n" +
                                     "  §7Warden HP:  §f" + (int) s.health() + "\n" +
                                     "  §7Damage:     §f" + s.damageMultiplier() + "x\n" +
-                                    "  §7Loot:       §f" + s.lootPreset()
+                                    "  §7Loot:       §f" + s.lootPreset() + "\n" +
+                                    "  §7XP Reward:  §f" + s.xpReward()
                                 ),
                                 false
                             );

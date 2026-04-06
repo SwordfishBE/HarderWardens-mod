@@ -7,21 +7,22 @@ package net.harderwardens;
 public record DifficultySettings(
         double health,
         double damageMultiplier,
-        LootPreset lootPreset
+        LootPreset lootPreset,
+        int xpReward
 ) {
 
     // ── Presets ───────────────────────────────────────────────────────────────
 
-    public static final DifficultySettings EASY      = new DifficultySettings(500.0,  1.0, LootPreset.EASY);
-    public static final DifficultySettings NORMAL    = new DifficultySettings(500.0,  1.5, LootPreset.NORMAL);
-    public static final DifficultySettings HARD      = new DifficultySettings(750.0,  2.0, LootPreset.HARD);
-    public static final DifficultySettings NIGHTMARE = new DifficultySettings(850.0, 2.5, LootPreset.NIGHTMARE);
-    public static final DifficultySettings INSANE    = new DifficultySettings(1000.0, 3.0, LootPreset.INSANE);
+    public static final DifficultySettings EASY      = new DifficultySettings(500.0,  1.0, LootPreset.EASY, 15);
+    public static final DifficultySettings NORMAL    = new DifficultySettings(500.0,  1.5, LootPreset.NORMAL, 25);
+    public static final DifficultySettings HARD      = new DifficultySettings(750.0,  2.0, LootPreset.HARD, 45);
+    public static final DifficultySettings NIGHTMARE = new DifficultySettings(850.0, 2.5, LootPreset.NIGHTMARE, 55);
+    public static final DifficultySettings INSANE    = new DifficultySettings(1000.0, 3.0, LootPreset.INSANE, 70);
 
     /** Returns the preset matching a given name string (used for customLootPreset). */
     public static DifficultySettings fromName(String name) {
         return switch (name.toUpperCase()) {
-            case "NONE"      -> new DifficultySettings(500.0, 1.0, LootPreset.NONE);
+            case "NONE"      -> new DifficultySettings(500.0, 1.0, LootPreset.NONE, 25);
             case "EASY"      -> EASY;
             case "HARD"      -> HARD;
             case "NIGHTMARE" -> NIGHTMARE;
