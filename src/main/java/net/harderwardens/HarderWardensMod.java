@@ -31,6 +31,7 @@ import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,6 +49,7 @@ public class HarderWardensMod implements ModInitializer {
     public static final String MOD_NAME = MOD_METADATA.getName();
     public static final String MOD_VERSION = MOD_METADATA.getVersion().getFriendlyString();
     public static final String LOG_PREFIX = "[" + MOD_NAME + "]";
+    private static final int MAX_PENDING_REFRESH_ATTEMPTS = 5;
 
     /** ID for the health modifier — prevents double-stacking on chunk reload. */
     public static final Identifier HEALTH_MODIFIER_ID =
@@ -61,7 +63,7 @@ public class HarderWardensMod implements ModInitializer {
     private static final ResourceKey<LootTable> WARDEN_LOOT_KEY =
             ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace("entities/warden"));
 
-    private static final Set<UUID> PENDING_WARDENS = ConcurrentHashMap.newKeySet();
+    private static final Map<UUID, Integer> PENDING_WARDENS = new ConcurrentHashMap<>();
 
     public static HarderWardensConfig CONFIG;
 
@@ -92,7 +94,7 @@ public class HarderWardensMod implements ModInitializer {
             if (entity instanceof Warden warden) {
                 applyWardenSettings(warden);
                 if (warden.tickCount <= 1) {
-                    PENDING_WARDENS.add(warden.getUUID());
+                    PENDING_WARDENS.put(warden.getUUID(), 0);
                 }
             }
         });
@@ -113,19 +115,34 @@ public class HarderWardensMod implements ModInitializer {
         }
 
         float desiredHealth = (float) CONFIG.getSettings().health();
-        Set<UUID> refreshed = ConcurrentHashMap.newKeySet();
+        Set<UUID> remainingWardens = ConcurrentHashMap.newKeySet();
         for (ServerLevel level : server.getAllLevels()) {
             for (var entity : level.getAllEntities()) {
-                if (entity instanceof Warden warden && PENDING_WARDENS.contains(warden.getUUID())) {
+                if (entity instanceof Warden warden && PENDING_WARDENS.containsKey(warden.getUUID())) {
+                    remainingWardens.add(warden.getUUID());
                     warden.setHealth(desiredHealth);
                     if (Math.abs(warden.getHealth() - desiredHealth) < 0.5F) {
-                        refreshed.add(warden.getUUID());
+                        PENDING_WARDENS.remove(warden.getUUID());
                     }
                 }
             }
         }
 
-        PENDING_WARDENS.removeAll(refreshed);
+        PENDING_WARDENS.entrySet().removeIf(entry -> {
+            if (!remainingWardens.contains(entry.getKey())) {
+                return true;
+            }
+
+            int attempts = entry.getValue() + 1;
+            if (attempts >= MAX_PENDING_REFRESH_ATTEMPTS) {
+                LOGGER.debug("{} Stopped refreshing Warden {} after {} attempts.",
+                        LOG_PREFIX, entry.getKey(), attempts);
+                return true;
+            }
+
+            entry.setValue(attempts);
+            return false;
+        });
     }
 
     /**

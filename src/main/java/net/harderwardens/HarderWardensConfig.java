@@ -24,6 +24,10 @@ import java.util.Locale;
 public class HarderWardensConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final double MIN_CUSTOM_HEALTH = 1.0;
+    private static final double MAX_CUSTOM_HEALTH = 1024.0;
+    private static final double MIN_CUSTOM_DAMAGE_MULTIPLIER = 0.1;
+    private static final double MAX_CUSTOM_DAMAGE_MULTIPLIER = 100.0;
 
     // ── Config fields ─────────────────────────────────────────────────────────
 
@@ -45,8 +49,14 @@ public class HarderWardensConfig {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     public Difficulty getDifficulty() {
+        if (difficulty == null || difficulty.isBlank()) {
+            HarderWardensMod.LOGGER.warn("{} Missing difficulty in config, falling back to NORMAL.",
+                    HarderWardensMod.LOG_PREFIX);
+            return Difficulty.NORMAL;
+        }
+
         try {
-            return Difficulty.valueOf(difficulty.toUpperCase());
+            return Difficulty.valueOf(difficulty.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             HarderWardensMod.LOGGER.warn("{} Unknown difficulty '{}', falling back to NORMAL.",
                     HarderWardensMod.LOG_PREFIX, difficulty);
@@ -71,8 +81,8 @@ public class HarderWardensConfig {
             case NIGHTMARE -> DifficultySettings.NIGHTMARE;
             case INSANE    -> DifficultySettings.INSANE;
             case CUSTOM    -> new DifficultySettings(
-                    customHealth,
-                    customDamageMultiplier,
+                    clampCustomHealth(customHealth),
+                    clampCustomDamageMultiplier(customDamageMultiplier),
                     DifficultySettings.fromName(customLootPreset).lootPreset(),
                     getClampedCustomXpReward()
             );
@@ -92,17 +102,19 @@ public class HarderWardensConfig {
                 jsonReader.setLenient(true);
                 HarderWardensConfig config = GSON.fromJson(jsonReader, HarderWardensConfig.class);
                 if (config != null) {
+                    config.sanitize();
                     HarderWardensMod.LOGGER.debug("{} Config loaded: difficulty={}",
                             HarderWardensMod.LOG_PREFIX, config.difficulty);
                     return config;
                 }
-            } catch (IOException e) {
+            } catch (IOException | RuntimeException e) {
                 HarderWardensMod.LOGGER.error("{} Failed to load config, using defaults.",
                         HarderWardensMod.LOG_PREFIX, e);
             }
         }
 
         HarderWardensConfig defaults = new HarderWardensConfig();
+        defaults.sanitize();
         defaults.save();
         HarderWardensMod.LOGGER.debug("{} Default config created at {}",
                 HarderWardensMod.LOG_PREFIX, configFile);
@@ -111,6 +123,7 @@ public class HarderWardensConfig {
 
     /** Saves the current config to disk. */
     public void save() {
+        sanitize();
         Path configFile = getConfigPath();
         try {
             Files.createDirectories(configFile.getParent());
@@ -155,6 +168,30 @@ public class HarderWardensConfig {
 
     private static String formatNumber(double value) {
         return String.format(Locale.ROOT, "%.1f", value);
+    }
+
+    private void sanitize() {
+        Difficulty difficultyValue = getDifficulty();
+        difficulty = difficultyValue.name();
+
+        customHealth = clampCustomHealth(customHealth);
+        customDamageMultiplier = clampCustomDamageMultiplier(customDamageMultiplier);
+        customLootPreset = DifficultySettings.fromName(customLootPreset).lootPreset().name();
+        customXpReward = getClampedCustomXpReward();
+    }
+
+    private static double clampCustomHealth(double value) {
+        if (!Double.isFinite(value)) {
+            return 500.0;
+        }
+        return Math.clamp(value, MIN_CUSTOM_HEALTH, MAX_CUSTOM_HEALTH);
+    }
+
+    private static double clampCustomDamageMultiplier(double value) {
+        if (!Double.isFinite(value)) {
+            return 1.5;
+        }
+        return Math.clamp(value, MIN_CUSTOM_DAMAGE_MULTIPLIER, MAX_CUSTOM_DAMAGE_MULTIPLIER);
     }
 
     private static Path getConfigPath() {

@@ -21,6 +21,10 @@ final class HarderWardensClothConfigScreen {
         ConfigCategory general = builder.getOrCreateCategory(Component.literal("General"));
         ConfigEntryBuilder entries = builder.entryBuilder();
 
+        general.addEntry(entries.startTextDescription(Component.literal(
+                "Edits here change this installation's local config. On multiplayer servers, the server config still decides Warden behavior."
+        )).build());
+
         general.addEntry(entries.startEnumSelector(
                         Component.literal("Difficulty"),
                         Difficulty.class,

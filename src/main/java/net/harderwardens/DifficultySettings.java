@@ -21,7 +21,11 @@ public record DifficultySettings(
 
     /** Returns the preset matching a given name string (used for customLootPreset). */
     public static DifficultySettings fromName(String name) {
-        return switch (name.toUpperCase()) {
+        if (name == null || name.isBlank()) {
+            return NORMAL;
+        }
+
+        return switch (name.trim().toUpperCase(java.util.Locale.ROOT)) {
             case "NONE"      -> new DifficultySettings(500.0, 1.0, LootPreset.NONE, 25);
             case "EASY"      -> EASY;
             case "HARD"      -> HARD;
