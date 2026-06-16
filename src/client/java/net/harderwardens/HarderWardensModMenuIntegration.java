@@ -7,7 +7,7 @@ import net.fabricmc.loader.api.FabricLoader;
 public final class HarderWardensModMenuIntegration implements ModMenuApi {
     @Override
     public ConfigScreenFactory<?> getModConfigScreenFactory() {
-        if (!FabricLoader.getInstance().isModLoaded("cloth-config")) {
+        if (!FabricLoader.getInstance().isModLoaded("cloth-config2")) {
             return parent -> null;
         }
 
