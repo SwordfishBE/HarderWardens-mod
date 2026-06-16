@@ -92,8 +92,9 @@ public class HarderWardensMod implements ModInitializer {
     private void registerEntityEvents() {
         ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
             if (entity instanceof Warden warden) {
-                applyWardenSettings(warden);
-                if (warden.tickCount <= 1) {
+                boolean freshSpawn = warden.tickCount <= 1;
+                applyWardenSettings(warden, freshSpawn);
+                if (freshSpawn) {
                     PENDING_WARDENS.put(warden.getUUID(), 0);
                 }
             }
@@ -114,22 +115,21 @@ public class HarderWardensMod implements ModInitializer {
             return;
         }
 
-        float desiredHealth = (float) CONFIG.getSettings().health();
-        Set<UUID> remainingWardens = ConcurrentHashMap.newKeySet();
+        Set<UUID> refreshedWardens = ConcurrentHashMap.newKeySet();
         for (ServerLevel level : server.getAllLevels()) {
             for (var entity : level.getAllEntities()) {
                 if (entity instanceof Warden warden && PENDING_WARDENS.containsKey(warden.getUUID())) {
-                    remainingWardens.add(warden.getUUID());
+                    float desiredHealth = warden.getMaxHealth();
                     warden.setHealth(desiredHealth);
                     if (Math.abs(warden.getHealth() - desiredHealth) < 0.5F) {
-                        PENDING_WARDENS.remove(warden.getUUID());
+                        refreshedWardens.add(warden.getUUID());
                     }
                 }
             }
         }
 
         PENDING_WARDENS.entrySet().removeIf(entry -> {
-            if (!remainingWardens.contains(entry.getKey())) {
+            if (refreshedWardens.contains(entry.getKey())) {
                 return true;
             }
 
@@ -149,7 +149,7 @@ public class HarderWardensMod implements ModInitializer {
      * Applies HP and attack damage modifiers based on the active config.
      * Uses named IDs so modifiers are never stacked twice.
      */
-    private void applyWardenSettings(Warden warden) {
+    private void applyWardenSettings(Warden warden, boolean freshSpawn) {
         DifficultySettings settings = CONFIG.getSettings();
 
         AttributeInstance healthAttr = warden.getAttribute(Attributes.MAX_HEALTH);
@@ -168,7 +168,7 @@ public class HarderWardensMod implements ModInitializer {
 
             float newMax = (float) healthAttr.getValue();
             float adjustedHealth = oldMax > 0.0F ? (oldHealth / oldMax) * newMax : newMax;
-            warden.setHealth(Mth.clamp(adjustedHealth, 0.0F, newMax));
+            warden.setHealth(freshSpawn ? newMax : Mth.clamp(adjustedHealth, 0.0F, newMax));
         }
 
         AttributeInstance damageAttr = warden.getAttribute(Attributes.ATTACK_DAMAGE);
