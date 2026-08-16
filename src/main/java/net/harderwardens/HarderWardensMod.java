@@ -128,20 +128,16 @@ public class HarderWardensMod implements ModInitializer {
             }
         }
 
+        PENDING_WARDENS.keySet().removeAll(refreshedWardens);
+        PENDING_WARDENS.replaceAll((uuid, attempts) -> attempts + 1);
         PENDING_WARDENS.entrySet().removeIf(entry -> {
-            if (refreshedWardens.contains(entry.getKey())) {
-                return true;
+            if (entry.getValue() < MAX_PENDING_REFRESH_ATTEMPTS) {
+                return false;
             }
 
-            int attempts = entry.getValue() + 1;
-            if (attempts >= MAX_PENDING_REFRESH_ATTEMPTS) {
-                LOGGER.debug("{} Stopped refreshing Warden {} after {} attempts.",
-                        LOG_PREFIX, entry.getKey(), attempts);
-                return true;
-            }
-
-            entry.setValue(attempts);
-            return false;
+            LOGGER.debug("{} Stopped refreshing Warden {} after {} attempts.",
+                    LOG_PREFIX, entry.getKey(), entry.getValue());
+            return true;
         });
     }
 
