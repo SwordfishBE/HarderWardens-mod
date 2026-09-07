@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.harderwardens.util.ModrinthUpdateChecker;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -26,8 +27,9 @@ import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
-import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
+import net.minecraft.world.level.storage.loot.providers.number.ints.UniformGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -238,11 +240,17 @@ public class HarderWardensMod implements ModInitializer {
     }
 
     private LootPool.Builder itemPool(net.minecraft.world.item.Item item, int min, int max) {
+        Holder<ContextIntProvider> rolls = Holder.direct(new ConstantValue(1));
+        Holder<ContextIntProvider> count = Holder.direct(new UniformGenerator(
+                Holder.direct(new ConstantValue(min)),
+                Holder.direct(new ConstantValue(max))
+        ));
+
         return LootPool.lootPool()
-                .setRolls(ConstantValue.exactly(1))
+                .setRolls(rolls)
                 .add(LootItem.lootTableItem(item)
                         .apply(SetItemCountFunction.setCount(
-                                UniformGenerator.between(min, max)
+                                count
                         ))
                 );
     }
