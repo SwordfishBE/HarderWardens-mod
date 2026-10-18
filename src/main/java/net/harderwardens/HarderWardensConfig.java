@@ -5,6 +5,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.annotations.SerializedName;
 import net.fabricmc.loader.api.FabricLoader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +24,9 @@ import java.util.Locale;
  *  customXpReward       - XP reward for the Warden (CUSTOM only, max 100)
  */
 public class HarderWardensConfig {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger("harder_wardens");
+    private static final String LOG_PREFIX = "[Harder Wardens]";
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final double MIN_CUSTOM_HEALTH = 1.0;
@@ -50,16 +55,14 @@ public class HarderWardensConfig {
 
     public Difficulty getDifficulty() {
         if (difficulty == null || difficulty.isBlank()) {
-            HarderWardensMod.LOGGER.warn("{} Missing difficulty in config, falling back to NORMAL.",
-                    HarderWardensMod.LOG_PREFIX);
+            LOGGER.warn("{} Missing difficulty in config, falling back to NORMAL.", LOG_PREFIX);
             return Difficulty.NORMAL;
         }
 
         try {
             return Difficulty.valueOf(difficulty.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
-            HarderWardensMod.LOGGER.warn("{} Unknown difficulty '{}', falling back to NORMAL.",
-                    HarderWardensMod.LOG_PREFIX, difficulty);
+            LOGGER.warn("{} Unknown difficulty '{}', falling back to NORMAL.", LOG_PREFIX, difficulty);
             return Difficulty.NORMAL;
         }
     }
@@ -93,7 +96,10 @@ public class HarderWardensConfig {
 
     /** Loads config from disk, or generates a default config if none exists. */
     public static HarderWardensConfig load() {
-        Path configFile = getConfigPath();
+        return load(getConfigPath());
+    }
+
+    static HarderWardensConfig load(Path configFile) {
 
         if (Files.exists(configFile)) {
             try (Reader reader = new InputStreamReader(
@@ -103,33 +109,50 @@ public class HarderWardensConfig {
                 HarderWardensConfig config = GSON.fromJson(jsonReader, HarderWardensConfig.class);
                 if (config != null) {
                     config.sanitize();
-                    HarderWardensMod.LOGGER.debug("{} Config loaded: difficulty={}",
-                            HarderWardensMod.LOG_PREFIX, config.difficulty);
+                    LOGGER.debug("{} Config loaded: difficulty={}", LOG_PREFIX, config.difficulty);
                     return config;
                 }
+                LOGGER.warn("{} Empty config; using defaults without overwriting {}.", LOG_PREFIX, configFile);
             } catch (IOException | RuntimeException e) {
-                HarderWardensMod.LOGGER.error("{} Failed to load config, using defaults.",
-                        HarderWardensMod.LOG_PREFIX, e);
+                LOGGER.error("{} Failed to load config; using defaults without overwriting {}.",
+                        LOG_PREFIX, configFile, e);
             }
+            return new HarderWardensConfig();
         }
 
         HarderWardensConfig defaults = new HarderWardensConfig();
         defaults.sanitize();
-        defaults.save();
-        HarderWardensMod.LOGGER.debug("{} Default config created at {}",
-                HarderWardensMod.LOG_PREFIX, configFile);
+        defaults.save(configFile);
         return defaults;
     }
 
     /** Saves the current config to disk. */
     public void save() {
+        save(getConfigPath());
+    }
+
+    void save(Path configFile) {
         sanitize();
-        Path configFile = getConfigPath();
+        Path temporary = null;
         try {
             Files.createDirectories(configFile.getParent());
-            Files.writeString(configFile, toCommentedJson(), StandardCharsets.UTF_8);
+            temporary = Files.createTempFile(configFile.getParent(), "harder_wardens-", ".tmp");
+            Files.writeString(temporary, toCommentedJson(), StandardCharsets.UTF_8);
+            try {
+                Files.move(temporary, configFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temporary, configFile, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException e) {
-            HarderWardensMod.LOGGER.error("{} Failed to save config.", HarderWardensMod.LOG_PREFIX, e);
+            LOGGER.error("{} Failed to save config.", LOG_PREFIX, e);
+        } finally {
+            if (temporary != null) {
+                try {
+                    Files.deleteIfExists(temporary);
+                } catch (IOException e) {
+                    LOGGER.debug("{} Failed to remove temporary config {}.", LOG_PREFIX, temporary, e);
+                }
+            }
         }
     }
 
@@ -167,7 +190,7 @@ public class HarderWardensConfig {
     }
 
     private static String formatNumber(double value) {
-        return String.format(Locale.ROOT, "%.1f", value);
+        return Double.toString(value);
     }
 
     private void sanitize() {

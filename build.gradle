@@ -36,6 +36,8 @@ repositories {
 }
 
 dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.4'
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
@@ -47,6 +49,20 @@ dependencies {
 	localRuntime("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
 		exclude group: "net.fabricmc.fabric-api"
 	}
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+}
+
+if (providers.gradleProperty('gameTests').isPresent()) {
+    fabricApi.configureTests {
+        createSourceSet = true
+        modId = 'harder_wardens_tests'
+        enableGameTests = true
+        enableClientGameTests = false
+        eula = false
+    }
 }
 
 processResources {

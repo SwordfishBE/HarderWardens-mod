@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "harder_wardens_tests",
+  "version": "1.0.0",
+  "name": "Harder Wardens Regression Tests",
+  "environment": "server",
+  "entrypoints": {
+    "fabric-gametest": ["net.harderwardens.WardenRegressionTests"]
+  }
+}

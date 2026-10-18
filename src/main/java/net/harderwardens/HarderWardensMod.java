@@ -23,6 +23,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
@@ -34,9 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Set;
+import java.util.HashMap;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static net.minecraft.commands.Commands.literal;
 
@@ -65,9 +65,12 @@ public class HarderWardensMod implements ModInitializer {
     private static final ResourceKey<LootTable> WARDEN_LOOT_KEY =
             ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace("entities/warden"));
 
-    private static final Map<UUID, Integer> PENDING_WARDENS = new ConcurrentHashMap<>();
+    // Accessed only on the server thread; no entity or world references are retained.
+    private static final Map<UUID, PendingRefresh> PENDING_WARDENS = new HashMap<>();
 
-    public static HarderWardensConfig CONFIG;
+    private record PendingRefresh(ResourceKey<Level> dimension, int attempts) {}
+
+    public static volatile HarderWardensConfig CONFIG;
 
     @Override
     public void onInitialize() {
@@ -79,6 +82,7 @@ public class HarderWardensMod implements ModInitializer {
         registerLootEvents();
         registerCommands();
         ServerLifecycleEvents.SERVER_STARTED.register(server -> ModrinthUpdateChecker.checkOnceAsync());
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> PENDING_WARDENS.clear());
     }
 
     static HarderWardensConfig loadConfigForEditing() {
@@ -94,11 +98,27 @@ public class HarderWardensMod implements ModInitializer {
     private void registerEntityEvents() {
         ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
             if (entity instanceof Warden warden) {
-                boolean freshSpawn = warden.tickCount <= 1;
+                MonsterAccessor state = (MonsterAccessor) warden;
+                AttributeInstance health = warden.getAttribute(Attributes.MAX_HEALTH);
+                AttributeInstance damage = warden.getAttribute(Attributes.ATTACK_DAMAGE);
+                if (health != null && health.getModifier(HEALTH_MODIFIER_ID) != null
+                        && damage != null && damage.getModifier(DAMAGE_MODIFIER_ID) != null) {
+                    // Older releases persisted attributes, but not the configured XP reward.
+                    if (state.harderWardens$getSavedXpReward() < 0) {
+                        state.harderWardens$setXpReward(CONFIG.getSettings().xpReward());
+                    }
+                    return;
+                }
+                boolean freshSpawn = !state.harderWardens$wasLoaded();
                 applyWardenSettings(warden, freshSpawn);
                 if (freshSpawn) {
-                    PENDING_WARDENS.put(warden.getUUID(), 0);
+                    PENDING_WARDENS.put(warden.getUUID(), new PendingRefresh(world.dimension(), 0));
                 }
+            }
+        });
+        ServerEntityEvents.ENTITY_UNLOAD.register((entity, world) -> {
+            if (entity instanceof Warden) {
+                PENDING_WARDENS.remove(entity.getUUID());
             }
         });
     }
@@ -117,30 +137,26 @@ public class HarderWardensMod implements ModInitializer {
             return;
         }
 
-        Set<UUID> refreshedWardens = ConcurrentHashMap.newKeySet();
-        for (ServerLevel level : server.getAllLevels()) {
-            for (var entity : level.getAllEntities()) {
-                if (entity instanceof Warden warden && PENDING_WARDENS.containsKey(warden.getUUID())) {
-                    float desiredHealth = warden.getMaxHealth();
-                    warden.setHealth(desiredHealth);
-                    if (Math.abs(warden.getHealth() - desiredHealth) < 0.5F) {
-                        refreshedWardens.add(warden.getUUID());
-                    }
+        var iterator = PENDING_WARDENS.entrySet().iterator();
+        while (iterator.hasNext()) {
+            var entry = iterator.next();
+            PendingRefresh pending = entry.getValue();
+            ServerLevel level = server.getLevel(pending.dimension());
+            if (level == null) {
+                iterator.remove();
+                continue;
+            }
+            if (level.getEntity(entry.getKey()) instanceof Warden warden) {
+                if (warden.isAlive()) {
+                    warden.setHealth(warden.getMaxHealth());
                 }
+                iterator.remove();
+            } else if (pending.attempts() + 1 >= MAX_PENDING_REFRESH_ATTEMPTS) {
+                iterator.remove();
+            } else {
+                entry.setValue(new PendingRefresh(pending.dimension(), pending.attempts() + 1));
             }
         }
-
-        PENDING_WARDENS.keySet().removeAll(refreshedWardens);
-        PENDING_WARDENS.replaceAll((uuid, attempts) -> attempts + 1);
-        PENDING_WARDENS.entrySet().removeIf(entry -> {
-            if (entry.getValue() < MAX_PENDING_REFRESH_ATTEMPTS) {
-                return false;
-            }
-
-            LOGGER.debug("{} Stopped refreshing Warden {} after {} attempts.",
-                    LOG_PREFIX, entry.getKey(), entry.getValue());
-            return true;
-        });
     }
 
     /**
