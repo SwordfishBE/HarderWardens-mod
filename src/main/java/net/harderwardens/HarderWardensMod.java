@@ -35,8 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static net.minecraft.commands.Commands.literal;
 
@@ -65,10 +65,10 @@ public class HarderWardensMod implements ModInitializer {
     private static final ResourceKey<LootTable> WARDEN_LOOT_KEY =
             ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace("entities/warden"));
 
-    // Accessed only on the server thread; no entity or world references are retained.
-    private static final Map<UUID, PendingRefresh> PENDING_WARDENS = new HashMap<>();
+    // Entity callbacks may run on Async workers; delayed HP refreshes run on the server tick.
+    private static final Map<UUID, PendingRefresh> PENDING_WARDENS = new ConcurrentHashMap<>();
 
-    private record PendingRefresh(ResourceKey<Level> dimension, int attempts) {}
+    private record PendingRefresh(ResourceKey<Level> dimension, int entityId, int attempts) {}
 
     public static volatile HarderWardensConfig CONFIG;
 
@@ -112,13 +112,15 @@ public class HarderWardensMod implements ModInitializer {
                 boolean freshSpawn = !state.harderWardens$wasLoaded();
                 applyWardenSettings(warden, freshSpawn);
                 if (freshSpawn) {
-                    PENDING_WARDENS.put(warden.getUUID(), new PendingRefresh(world.dimension(), 0));
+                    PENDING_WARDENS.put(warden.getUUID(), new PendingRefresh(world.dimension(), warden.getId(), 0));
                 }
             }
         });
         ServerEntityEvents.ENTITY_UNLOAD.register((entity, world) -> {
             if (entity instanceof Warden) {
-                PENDING_WARDENS.remove(entity.getUUID());
+                PENDING_WARDENS.computeIfPresent(entity.getUUID(), (uuid, pending) ->
+                        pending.entityId() == entity.getId() && pending.dimension().equals(world.dimension())
+                                ? null : pending);
             }
         });
     }
@@ -137,24 +139,25 @@ public class HarderWardensMod implements ModInitializer {
             return;
         }
 
-        var iterator = PENDING_WARDENS.entrySet().iterator();
-        while (iterator.hasNext()) {
-            var entry = iterator.next();
+        for (var entry : PENDING_WARDENS.entrySet()) {
             PendingRefresh pending = entry.getValue();
             ServerLevel level = server.getLevel(pending.dimension());
             if (level == null) {
-                iterator.remove();
+                PENDING_WARDENS.remove(entry.getKey(), pending);
                 continue;
             }
-            if (level.getEntity(entry.getKey()) instanceof Warden warden) {
+            if (level.getEntity(entry.getKey()) instanceof Warden warden
+                    && warden.getId() == pending.entityId()) {
                 if (warden.isAlive()) {
                     warden.setHealth(warden.getMaxHealth());
                 }
-                iterator.remove();
+                PENDING_WARDENS.remove(entry.getKey(), pending);
             } else if (pending.attempts() + 1 >= MAX_PENDING_REFRESH_ATTEMPTS) {
-                iterator.remove();
+                PENDING_WARDENS.remove(entry.getKey(), pending);
             } else {
-                entry.setValue(new PendingRefresh(pending.dimension(), pending.attempts() + 1));
+                // Do not resurrect a removed request or overwrite a newer entity's request.
+                PENDING_WARDENS.replace(entry.getKey(), pending,
+                        new PendingRefresh(pending.dimension(), pending.entityId(), pending.attempts() + 1));
             }
         }
     }

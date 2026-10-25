@@ -5,6 +5,9 @@
   "name": "Harder Wardens Regression Tests",
   "environment": "server",
   "entrypoints": {
-    "fabric-gametest": ["net.harderwardens.WardenRegressionTests"]
+    "fabric-gametest": [
+      "net.harderwardens.WardenRegressionTests",
+      "net.harderwardens.PendingRefreshRegressionTests"
+    ]
   }
 }
