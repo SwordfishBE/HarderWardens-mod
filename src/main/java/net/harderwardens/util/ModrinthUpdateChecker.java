@@ -8,6 +8,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.Version;
 import net.fabricmc.loader.api.VersionParsingException;
 import net.harderwardens.HarderWardensMod;
+import net.minecraft.SharedConstants;
 
 import java.io.IOException;
 import java.net.URI;
@@ -175,10 +176,7 @@ public final class ModrinthUpdateChecker {
     }
 
     private static String currentMinecraftVersion() {
-        return FabricLoader.getInstance()
-                .getModContainer("minecraft")
-                .map(container -> container.getMetadata().getVersion().getFriendlyString())
-                .orElse("unknown");
+        return SharedConstants.getCurrentVersion().id();
     }
 
     private static boolean isNewerVersion(String candidate, String current) {

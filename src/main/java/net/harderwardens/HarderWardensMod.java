@@ -17,7 +17,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.permissions.Permissions;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -185,7 +184,7 @@ public class HarderWardensMod implements ModInitializer {
 
             float newMax = (float) healthAttr.getValue();
             float adjustedHealth = oldMax > 0.0F ? (oldHealth / oldMax) * newMax : newMax;
-            warden.setHealth(freshSpawn ? newMax : Mth.clamp(adjustedHealth, 0.0F, newMax));
+            warden.setHealth(freshSpawn ? newMax : Math.clamp(adjustedHealth, 0.0F, newMax));
         }
 
         AttributeInstance damageAttr = warden.getAttribute(Attributes.ATTACK_DAMAGE);
